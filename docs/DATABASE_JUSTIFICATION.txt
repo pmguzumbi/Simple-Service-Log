@@ -1,1 +1,41 @@
-Database choice justification.
+
+DATABASE SELECTION JUSTIFICATION
+Simple Log Service
+
+SELECTED DATABASE: Amazon DynamoDB
+
+RATIONALE:
+
+1. PERFORMANCE REQUIREMENTS
+   - Need to store and retrieve log entries with low latency
+   - Write-heavy workload (continuous log ingestion)
+   - Read pattern: Retrieve 100 most recent entries
+   - DynamoDB provides single-digit millisecond latency for both reads and writes
+   - On-demand billing mode scales automatically without capacity planning
+
+2. SCHEMA DESIGN
+   - Simple key-value structure with minimal relationships
+   - No complex joins or transactions required
+   - Schema:
+     * Primary Key: id (Partition Key) + datetime (Sort Key)
+     * Attributes: severity, message
+     * GSI: datetime-index for efficient time-based queries
+   - DynamoDB excels at simple, well-defined access patterns
+
+3. SCALABILITY
+   - DynamoDB scales horizontally without manual intervention
+   - On-demand mode handles unpredictable traffic patterns
+   - No need to provision capacity units
+   - Automatic partitioning as data grows
+   - Can handle millions of requests per second if needed
+
+4. OPERATIONAL SIMPLICITY
+   - Fully managed service (no servers to maintain)
+   - Automatic backups with point-in-time recovery
+   - Built-in encryption at rest
+   - No patching or maintenance windows
+   - High availability across multiple AZs by default
+
+5. COST EFFICIENCY
+   - Pay-per-request pricing (no idle costs)
+   - No minimum fees or upfront costs
