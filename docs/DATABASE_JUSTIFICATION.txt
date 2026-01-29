@@ -1,4 +1,3 @@
-
 DATABASE SELECTION JUSTIFICATION
 Simple Log Service
 
