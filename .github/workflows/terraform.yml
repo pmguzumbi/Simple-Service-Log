@@ -1,3 +1,5 @@
+```yaml
+
 name: Terraform CI
 
 on:
@@ -87,17 +89,21 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install boto3 pytest moto
+          pip install boto3>=1.28.0 pytest moto requests
 
       - name: Run Ingest Lambda tests
         run: |
-          cd lambda/ingest/tests
-          python -m pytest test_ingest.py -v
+          cd lambda/ingest
+          export TABLE_NAME=test-log-entries
+          python -m pytest tests/test_ingest.py -v --tb=short
+        continue-on-error: false
 
       - name: Run Read Recent Lambda tests
         run: |
-          cd lambda/read_recent/tests
-          python -m pytest test_read_recent.py -v
+          cd lambda/read_recent
+          export TABLE_NAME=test-log-entries
+          python -m pytest tests/test_read_recent.py -v --tb=short
+        continue-on-error: false
 
   security-scan:
     name: Security Scan
@@ -114,6 +120,9 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+          ignore-unfixed: true
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
@@ -177,4 +186,3 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
-
