@@ -1,5 +1,3 @@
-```hcl
-
 # Core infrastructure for Simple Log Service
 
 terraform {
@@ -417,5 +415,3 @@ resource "aws_sns_topic_subscription" "compliance_email" {
   protocol  = "email"
   endpoint  = var.compliance_email
 }
-
-```
