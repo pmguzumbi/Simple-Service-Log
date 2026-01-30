@@ -1,3 +1,5 @@
+```hcl
+
 # Core infrastructure for Simple Log Service
 
 terraform {
@@ -27,11 +29,80 @@ provider "aws" {
   }
 }
 
-# KMS Key for encryption
+# Data source for account ID
+data "aws_caller_identity" "current" {}
+
+# KMS Key for DynamoDB and CloudWatch Logs encryption
 resource "aws_kms_key" "log_service" {
   description             = "KMS key for Simple Log Service encryption"
   deletion_window_in_days = 30
   enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow CloudWatch Logs"
+        Effect = "Allow"
+        Principal = {
+          Service = "logs.${var.aws_region}.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:CreateGrant",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+        Condition = {
+          ArnLike = {
+            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+          }
+        }
+      },
+      {
+        Sid    = "Allow DynamoDB"
+        Effect = "Allow"
+        Principal = {
+          Service = "dynamodb.amazonaws.com"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:CreateGrant"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "kms:ViaService" = "dynamodb.${var.aws_region}.amazonaws.com"
+          }
+        }
+      },
+      {
+        Sid    = "Allow SNS"
+        Effect = "Allow"
+        Principal = {
+          Service = "sns.amazonaws.com"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 
   tags = {
     Name = "${var.project_name}-kms-key"
@@ -347,3 +418,4 @@ resource "aws_sns_topic_subscription" "compliance_email" {
   endpoint  = var.compliance_email
 }
 
+```
